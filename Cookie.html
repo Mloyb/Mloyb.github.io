@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🍪 Cookie Clicker</title>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #1a0800;
+  --panel: #221000;
+  --panel2: #2e1400;
+  --panel3: #3a1a00;
+  --accent: #ff9d00;
+  --accent2: #ffcc44;
+  --text: #ffe8b0;
+  --muted: #b88a50;
+  --green: #6fcf3a;
+  --blue: #4ab0ff;
+  --purple: #c084fc;
+  --gold: #DAA520;
+  --border: #4a2500;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+html, body { height:100%; overflow:hidden; }
+body {
+  font-family: 'Nunito', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  background-image: radial-gradient(ellipse at 50% -10%, #3a1500 0%, #1a0800 55%);
+}
+
+/* TOP BAR */
+#topbar {
+  display: flex; align-items: center; justify-content: center;
+  gap: 20px; padding: 7px 16px 5px;
+  border-bottom: 1px solid var(--border);
+  background: #1c0900ee;
+  position: relative; z-index: 10;
+}
+#topbar h1 {
+  font-family: 'Fredoka One', cursive;
+  font-size: 1.7rem; color: var(--accent);
+  text-shadow: 0 0 18px #ff9d0066;
+}
+.top-stat { text-align: center; }
+.top-stat .val { font-weight: 900; font-size: 0.95rem; color: var(--text); }
+.top-stat .lbl { font-size: 0.6rem; color: var(--muted); }
+.prestige-pill {
+  background: linear-gradient(135deg, #6d28d9, #4c1d95);
+  color: #e9d5ff; font-family: 'Fredoka One', cursive;
+  font-size: 0.78rem; padding: 4px 14px; border-radius: 20px;
+  border: 1px solid #7c3aed66; cursor: pointer; transition: all 0.15s;
+  box-shadow: 0 0 10px #7c3aed33;
+}
+.prestige-pill:hover { transform: scale(1.06); box-shadow: 0 0 18px #7c3aed77; }
+
+/* LAYOUT */
+#layout {
+  display: grid;
+  grid-template-columns: 225px 1fr 268px;
+  height: calc(100vh - 58px);
+}
+
+/* SIDE PANELS */
+.side-panel {
+  background: var(--panel);
+  border-right: 1px solid var(--border);
+  overflow-y: auto; overflow-x: hidden;
+  padding: 9px 7px;
+}
+.side-panel.right { border-right: none; border-left: 1px solid var(--border); }
+.panel-title {
+  font-family: 'Fredoka One', cursive;
+  font-size: 0.9rem; color: var(--accent);
+  text-align: center; margin-bottom: 7px; letter-spacing: 1px;
+}
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-thumb { background: #4a2500; border-radius: 2px; }
+
+/* UPGRADES */
+.upgrade-btn {
+  display: flex; align-items: center; gap: 7px;
+  background: var(--panel2); border: 1px solid #4a2800;
+  border-radius: 9px; padding: 6px 7px; margin-bottom: 5px;
+  cursor: pointer; transition: all 0.12s; width: 100%;
+  text-align: left; color: var(--text);
+}
+.upgrade-btn:hover:not(:disabled) { background: #421f00; border-color: var(--accent); transform: translateX(3px); }
+.upgrade-btn:disabled { opacity: 0.32; cursor: not-allowed; }
+.upgrade-btn.bought { background: #0d2600; border-color: #3a7a00; cursor: default; }
+.upg-icon { font-size: 1.3rem; flex-shrink: 0; }
+.upg-info { flex:1; min-width:0; }
+.upg-name { font-weight: 800; font-size: 0.74rem; line-height: 1.2; }
+.upg-desc { font-size: 0.61rem; color: var(--muted); }
+.upg-impact { font-size: 0.61rem; color: var(--blue); font-weight: 700; }
+.upg-cost { font-size: 0.68rem; color: var(--gold); font-weight: 700; white-space:nowrap; flex-shrink:0; }
+
+/* CENTER */
+#centerPanel {
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  position: relative; overflow: hidden;
+}
+
+/* MILK */
+#milkContainer {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  height: 56px; overflow: hidden; pointer-events: none; z-index: 2;
+}
+#milkSurface {
+  position: absolute; bottom: 0; left: 0; right: 0; height: 100%;
+  transition: background 1.5s ease;
+}
+#milkWaveSvg {
+  position: absolute; top: -1px; left: -5%; width: 110%;
+  animation: waveMove 4s ease-in-out infinite;
+}
+@keyframes waveMove {
+  0%,100% { transform: translateX(0); }
+  50%      { transform: translateX(3%); }
+}
+#milkLabel {
+  position: absolute; bottom: 59px; left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.7rem; color: #c8a070aa; font-style: italic;
+  pointer-events: none; z-index: 3; white-space:nowrap;
+}
+
+/* COOKIE */
+#cookieArea {
+  position: relative; z-index: 5; cursor: pointer; user-select: none;
+  display: flex; flex-direction: column; align-items: center;
+}
+#cookieBtn {
+  font-size: 8rem; background: none; border: none; cursor: pointer;
+  display: block; line-height: 1;
+  filter: drop-shadow(0 0 22px #ff9d0055);
+  transition: transform 0.07s;
+  animation: floatCookie 3s ease-in-out infinite;
+}
+#cookieBtn:active { transform: scale(0.85) !important; animation: none; }
+@keyframes floatCookie {
+  0%,100% { transform: translateY(0) rotate(-2deg); }
+  50%      { transform: translateY(-11px) rotate(2deg); }
+}
+.pop {
+  position: absolute; pointer-events: none;
+  font-weight: 900; font-size: 0.95rem;
+  color: var(--accent2); text-shadow: 0 0 5px #ff9d00aa;
+  animation: popAnim 0.85s ease-out forwards; z-index: 20; white-space:nowrap;
+}
+@keyframes popAnim {
+  0%   { opacity:1; transform:translateY(0) scale(1); }
+  100% { opacity:0; transform:translateY(-65px) scale(0.55); }
+}
+#multiBadge {
+  margin-top: 10px; background: var(--accent); color: #1a0800;
+  font-family: 'Fredoka One', cursive; font-size: 0.82rem;
+  padding: 3px 14px; border-radius: 20px;
+  box-shadow: 0 0 10px #ff9d0055; white-space:nowrap;
+}
+
+/* ORBIT LAYER */
+#orbitLayer {
+  position: absolute; inset: 0; pointer-events: none; z-index: 4;
+}
+
+/* BUILDINGS */
+.bldg-btn {
+  display: flex; align-items: center; gap: 7px;
+  background: var(--panel2); border: 1px solid #4a2800;
+  border-radius: 9px; padding: 6px 7px; margin-bottom: 5px;
+  cursor: pointer; transition: all 0.12s; width: 100%;
+  text-align: left; color: var(--text);
+}
+.bldg-btn:hover:not(:disabled) { background: #421f00; border-color: var(--accent); transform: translateX(-3px); }
+.bldg-btn:disabled { opacity: 0.32; cursor: not-allowed; }
+.bldg-icon { font-size: 1.45rem; flex-shrink: 0; }
+.bldg-info { flex:1; min-width:0; }
+.bldg-name { font-weight: 800; font-size: 0.78rem; line-height:1.1; }
+.bldg-cps-line { font-size: 0.61rem; color: var(--blue); font-weight: 700; }
+.bldg-meta { display:flex; justify-content:space-between; align-items:center; margin-top:2px; }
+.bldg-cost { font-size: 0.68rem; color: var(--gold); font-weight: 700; }
+.bldg-count {
+  background: var(--accent); color: #1a0800; font-weight:900;
+  font-size: 0.66rem; padding: 1px 7px; border-radius: 9px;
+  font-family: 'Fredoka One', cursive; min-width:22px; text-align:center;
+}
+.bldg-bar { height: 3px; background: #3a1800; border-radius: 2px; margin-top:3px; overflow:hidden; }
+.bldg-bar-fill { height:100%; background: linear-gradient(90deg, var(--accent), var(--accent2)); transition: width 0.25s; }
+
+/* PRESTIGE MODAL */
+#prestigeModal {
+  display: none; position: fixed; inset: 0;
+  background: #000000bb; z-index: 300;
+  align-items: center; justify-content: center;
+  backdrop-filter: blur(5px);
+}
+#prestigeModal.open { display: flex; }
+#prestigeBox {
+  background: linear-gradient(160deg, #1c0a38, #0d0420);
+  border: 1px solid #6d28d966;
+  border-radius: 18px; padding: 22px 20px;
+  width: 640px; max-width: 96vw; max-height: 88vh;
+  overflow-y: auto; position: relative;
+  box-shadow: 0 0 50px #6d28d933;
+}
+#prestigeBox h2 {
+  font-family: 'Fredoka One', cursive;
+  font-size: 1.5rem; color: #e9d5ff; text-align: center; margin-bottom: 4px;
+}
+.p-info { text-align:center; color: #b89ad8; font-size: 0.82rem; margin-bottom: 12px; }
+.p-currency-bar {
+  display: flex; align-items: center; justify-content: center;
+  gap: 12px; padding: 10px 18px; margin-bottom: 14px;
+  background: #26104a; border-radius: 12px; border: 1px solid #6d28d944;
+}
+.p-currency-bar .star { font-size: 1.5rem; }
+.p-currency-bar .chips { font-family:'Fredoka One',cursive; font-size:1.3rem; color:#e9d5ff; }
+.p-currency-bar .lbl { font-size:0.7rem; color:#a07cc8; }
+.p-earn { font-size:0.75rem; color:#b89ad8; margin-left:8px; }
+.p-earn span { color:#c084fc; font-weight:900; }
+
+/* Prestige tree — tier rows */
+.ptier { margin-bottom: 8px; }
+.ptier-label { font-size:0.65rem; color:#7c5baa; text-transform:uppercase; letter-spacing:2px; margin-bottom:5px; padding-left:2px; }
+.ptier-row { display:flex; gap:8px; flex-wrap:wrap; }
+.pnode {
+  flex: 1; min-width: 130px;
+  background: #261050; border: 1px solid #6d28d944;
+  border-radius: 11px; padding: 10px 10px 8px;
+  cursor: pointer; transition: all 0.13s; position: relative;
+}
+.pnode:hover:not(.locked):not(.owned) { border-color: #a855f7; background: #361870; }
+.pnode.owned { background: #160a2a; border-color: #5b21b6; }
+.pnode.owned::after {
+  content:'✓'; position:absolute; top:6px; right:8px;
+  color:#a855f7; font-weight:900; font-size:0.85rem;
+}
+.pnode.locked { opacity:0.38; cursor:not-allowed; }
+.pnode.cant-afford { opacity:0.6; cursor:not-allowed; }
+.pnode-icon { font-size:1.4rem; margin-bottom:3px; }
+.pnode-name { font-family:'Fredoka One',cursive; font-size:0.85rem; color:#e9d5ff; }
+.pnode-desc { font-size:0.63rem; color:#a07cc8; margin-top:2px; }
+.pnode-cost { font-size:0.68rem; color:#c084fc; font-weight:700; margin-top:5px; display:flex; align-items:center; gap:3px; }
+.pnode-req { font-size:0.6rem; color:#6d4d9a; margin-top:2px; }
+
+.p-actions { display:flex; gap:10px; justify-content:center; margin-top:14px; }
+.p-do-btn {
+  background: linear-gradient(135deg, #7c3aed, #5b21b6);
+  color:white; border:none; border-radius:11px;
+  padding:9px 26px; font-family:'Fredoka One',cursive; font-size:0.95rem;
+  cursor:pointer; transition:all 0.14s; box-shadow:0 0 14px #7c3aed44;
+}
+.p-do-btn:hover:not(:disabled) { transform:scale(1.04); box-shadow:0 0 24px #7c3aed77; }
+.p-do-btn:disabled { opacity:0.45; cursor:not-allowed; transform:none; }
+.p-close-btn {
+  background:var(--panel3); color:var(--muted);
+  border:1px solid var(--border); border-radius:11px;
+  padding:9px 18px; font-family:'Fredoka One',cursive; font-size:0.95rem;
+  cursor:pointer; transition:all 0.13s;
+}
+.p-close-btn:hover { background:var(--panel2); color:var(--text); }
+
+/* GOLDEN COOKIE */
+.gc {
+  position: fixed; font-size: 2.4rem; cursor: pointer;
+  z-index: 150; filter: drop-shadow(0 0 10px gold);
+  animation: gcBob 2s ease-in-out infinite, gcGlow 1s ease-in-out infinite alternate;
+}
+.gc:hover { filter: drop-shadow(0 0 20px #ffd700) !important; transform:scale(1.2); }
+@keyframes gcBob  { 0%,100%{transform:translateY(0);} 50%{transform:translateY(-7px);} }
+@keyframes gcGlow { from{filter:drop-shadow(0 0 7px gold);} to{filter:drop-shadow(0 0 20px #ffd700);} }
+
+/* TOAST */
+.toast {
+  position: fixed; top: 65px; left: 50%; transform: translateX(-50%);
+  background: linear-gradient(135deg, var(--accent), #e06000);
+  color: #1a0800; font-family: 'Fredoka One', cursive; font-size: 1.05rem;
+  padding: 8px 22px; border-radius: 40px; z-index: 500;
+  animation: toastAnim 2.8s forwards; pointer-events:none; white-space:nowrap;
+  box-shadow: 0 3px 20px #ff9d0066;
+}
+.toast.p { background: linear-gradient(135deg, #7c3aed, #4c1d95); color:#e9d5ff; box-shadow:0 3px 20px #7c3aed55; }
+@keyframes toastAnim {
+  0%  { opacity:0; top:40px; }
+  14% { opacity:1; top:65px; }
+  75% { opacity:1; top:65px; }
+  100%{ opacity:0; top:65px; }
+}
+</style>
+</head>
+<body>
+
+<div id="topbar">
+  <h1>🍪 Cookie Clicker</h1>
+  <div class="top-stat"><div class="val" id="cookieVal">0</div><div class="lbl">cookies</div></div>
+  <div class="top-stat"><div class="val" id="cpsVal">0/s</div><div class="lbl">per second</div></div>
+  <div class="top-stat"><div class="val" id="totalVal">0</div><div class="lbl">total baked</div></div>
+  <button class="prestige-pill" onclick="openPrestige()">⭐ Prestige</button>
+</div>
+
+<div id="layout">
+  <div class="side-panel" id="upgradesPanel">
+    <div class="panel-title">✨ UPGRADES</div>
+    <div id="upgradesList"></div>
+  </div>
+
+  <div id="centerPanel">
+    <div id="orbitLayer"></div>
+
+    <div id="cookieArea">
+      <button id="cookieBtn" onclick="clickCookie(event)">🍪</button>
+      <div id="multiBadge">+1 per click</div>
+    </div>
+
+    <div id="milkLabel"></div>
+    <div id="milkContainer">
+      <div id="milkSurface">
+        <svg id="milkWaveSvg" viewBox="0 0 1200 56" preserveAspectRatio="none" style="height:18px;display:block;">
+          <path d="M0,28 C200,0 400,56 600,28 C800,0 1000,56 1200,28 L1200,56 L0,56 Z" fill="currentColor" id="wavePath"/>
+        </svg>
+      </div>
+    </div>
+  </div>
+
+  <div class="side-panel right" id="buildingsPanel">
+    <div class="panel-title">🏭 BUILDINGS</div>
+    <div id="buildingsList"></div>
+  </div>
+</div>
+
+<!-- PRESTIGE MODAL -->
+<div id="prestigeModal">
+  <div id="prestigeBox">
+    <h2>⭐ Prestige</h2>
+    <div class="p-info" id="pInfo">Reset your run to earn Heavenly Chips and unlock permanent power.</div>
+    <div class="p-currency-bar">
+      <span class="star">⭐</span>
+      <div>
+        <div class="chips" id="chipCount">0</div>
+        <div class="lbl">Heavenly Chips</div>
+      </div>
+      <div class="p-earn">On prestige: <span id="chipEarn">0</span> chips</div>
+    </div>
+    <div id="prestigeTree"></div>
+    <div class="p-actions">
+      <button class="p-do-btn" id="pDoBtn" onclick="doPrestige()">✨ Prestige Now</button>
+      <button class="p-close-btn" onclick="closePrestige()">Close</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ════════ DATA ════════
+const BUILDINGS = [
+  {id:'cursor',      name:'Cursor',       icon:'🖱️', desc:'Autoclicks',               baseCost:15,     baseCps:0.1   },
+  {id:'grandma',     name:'Grandma',      icon:'👵', desc:'Cookie-baking grandma',     baseCost:100,    baseCps:0.5   },
+  {id:'farm',        name:'Farm',         icon:'🌾', desc:'Grows cookie plants',       baseCost:1100,   baseCps:4     },
+  {id:'mine',        name:'Mine',         icon:'⛏️', desc:'Mines cookie dough',        baseCost:12000,  baseCps:10    },
+  {id:'factory',     name:'Factory',      icon:'🏭', desc:'Mass-produces cookies',     baseCost:130000, baseCps:40    },
+  {id:'bank',        name:'Bank',         icon:'🏦', desc:'Cookie futures',            baseCost:1.4e6,  baseCps:100   },
+  {id:'temple',      name:'Temple',       icon:'🛕', desc:'Cookie gods approve',       baseCost:2e7,    baseCps:400   },
+  {id:'wizard',      name:'Wizard Tower', icon:'🧙', desc:'Conjures cookies',          baseCost:3.3e8,  baseCps:1600  },
+  {id:'shipment',    name:'Shipment',     icon:'🚀', desc:'Imports from space',        baseCost:5.1e9,  baseCps:6000  },
+  {id:'alchemy',     name:'Alchemy Lab',  icon:'⚗️', desc:'Gold into cookies',         baseCost:7.5e10, baseCps:25000 },
+  {id:'portal',      name:'Portal',       icon:'🌀', desc:'Cookie dimensions',         baseCost:1e12,   baseCps:100000},
+  {id:'timemachine', name:'Time Machine', icon:'⏰', desc:'Bakes from the past',       baseCost:1.4e13, baseCps:400000},
+];
+
+const UPGRADES = [
+  {id:'u1',  name:'Reinforced Clicking', icon:'👆', desc:'2× click power',           cost:100,    type:'click',  bldg:null,      mult:2  },
+  {id:'u2',  name:'Power Clicking',      icon:'💪', desc:'3× click power',           cost:1000,   type:'click',  bldg:null,      mult:3  },
+  {id:'u3',  name:'Turbo Clicking',      icon:'⚡', desc:'4× click power',           cost:10000,  type:'click',  bldg:null,      mult:4  },
+  {id:'u4',  name:'Mega Clicking',       icon:'🌟', desc:'5× click power',           cost:100000, type:'click',  bldg:null,      mult:5  },
+  {id:'u5',  name:'Ultra Click',         icon:'💫', desc:'10× click power',          cost:5e6,    type:'click',  bldg:null,      mult:10 },
+  {id:'u6',  name:"Grandma's Secret",    icon:'🧁', desc:'2× grandma output',        cost:1000,   type:'bldg',   bldg:'grandma', mult:2  },
+  {id:'u7',  name:'Fertilizer',          icon:'🌱', desc:'2× farm output',           cost:10000,  type:'bldg',   bldg:'farm',    mult:2  },
+  {id:'u8',  name:'Superior Drills',     icon:'🔩', desc:'2× mine output',           cost:100000, type:'bldg',   bldg:'mine',    mult:2  },
+  {id:'u9',  name:'Assembly Line',       icon:'🔧', desc:'2× factory output',        cost:1e6,    type:'bldg',   bldg:'factory', mult:2  },
+  {id:'u10', name:'Derivatives',         icon:'📈', desc:'2× bank output',           cost:1e7,    type:'bldg',   bldg:'bank',    mult:2  },
+  {id:'u11', name:'Cookies of Fortune',  icon:'🥠', desc:'+50% all CPS',             cost:5e5,    type:'global', bldg:null,      mult:1.5},
+  {id:'u12', name:'Blessing of Choco',   icon:'🍫', desc:'+100% all CPS',            cost:5e7,    type:'global', bldg:null,      mult:2  },
+  {id:'u13', name:'Cosmic Dough',        icon:'🌌', desc:'+200% all CPS',            cost:5e9,    type:'global', bldg:null,      mult:3  },
+  {id:'u14', name:'Grandma Army',        icon:'👴', desc:'4× grandma output',        cost:50000,  type:'bldg',   bldg:'grandma', mult:4  },
+  {id:'u15', name:'Hydroponics',         icon:'💧', desc:'4× farm output',           cost:5e5,    type:'bldg',   bldg:'farm',    mult:4  },
+  {id:'u16', name:'Quantum Drills',      icon:'🔬', desc:'4× mine output',           cost:5e6,    type:'bldg',   bldg:'mine',    mult:4  },
+  {id:'u17', name:'Robotic Workers',     icon:'🤖', desc:'4× factory output',        cost:5e7,    type:'bldg',   bldg:'factory', mult:4  },
+  {id:'u18', name:'Galactic Shipping',   icon:'🛸', desc:'4× shipment output',       cost:5e10,   type:'bldg',   bldg:'shipment',mult:4  },
+];
+
+// Prestige upgrades in tiers (tier 0 = no reqs, tier 1 = needs tier 0, etc.)
+const PRESTIGE_UPGRADES = [
+  // tier 0 - starter
+  {id:'p1', name:'Chip of Wisdom',   icon:'💡', desc:'+25% all CPS',            cost:1, req:[],             effect:'cps',   val:0.25},
+  {id:'p2', name:'Lucky Clicks',     icon:'🍀', desc:'+50% click power',        cost:1, req:[],             effect:'click', val:0.5 },
+  // tier 1
+  {id:'p3', name:'Veteran Baker',    icon:'🎂', desc:'Buildings 10% cheaper',   cost:2, req:['p1'],         effect:'cheap', val:0.1 },
+  {id:'p4', name:'Golden Touch',     icon:'✨', desc:'Golden cookies 2× bonus', cost:2, req:['p2'],         effect:'golden',val:2   },
+  // tier 2
+  {id:'p5', name:'Prestige Mastery', icon:'🌠', desc:'+75% all CPS',           cost:3, req:['p1','p3'],    effect:'cps',   val:0.75},
+  {id:'p6', name:'Speed Clicker',    icon:'⚡', desc:'+100% click power',       cost:3, req:['p2','p4'],    effect:'click', val:1.0 },
+  // tier 3
+  {id:'p7', name:'Quantum Baker',    icon:'⚛️', desc:'2× all production',       cost:5, req:['p3','p5'],    effect:'cps',   val:1.0 },
+  {id:'p8', name:'Dough Singularity',icon:'🌀', desc:'5× click power',          cost:5, req:['p4','p6'],    effect:'click', val:4.0 },
+  // tier 4
+  {id:'p9', name:'Cookie God',       icon:'🌟', desc:'3× everything forever',   cost:8, req:['p7','p8'],    effect:'cps',   val:2.0 },
+];
+
+const MILK_LEVELS = [
+  {thresh:0,    name:'',           color:null,             icon:''},
+  {thresh:1e6,  name:'Plain',      color:'#fff5e0dd',      icon:'🥛'},
+  {thresh:1e8,  name:'Chocolate',  color:'#7B3F00cc',      icon:'🍫'},
+  {thresh:1e10, name:'Strawberry', color:'#FF8080cc',      icon:'🍓'},
+  {thresh:1e12, name:'Golden',     color:'#FFD700cc',      icon:'✨'},
+  {thresh:1e15, name:'Cosmic',     color:'#8B5CF6cc',      icon:'🌌'},
+];
+
+// ════════ STATE ════════
+let cookies=0, totalBaked=0, cps=0;
+let clickMult=1, globalMult=1;
+let bldgOwned={}, bldgMult={};
+let upgBought=new Set();
+let heavenlyChips=0, pUpgBought=new Set();
+let pCpsBonus=0, pClickBonus=0, pCheapBonus=0, pGoldenMult=1;
+let goldenActive=false, lastTick=Date.now();
+
+BUILDINGS.forEach(b=>{bldgOwned[b.id]=0; bldgMult[b.id]=1;});
+
+// ════════ MATH ════════
+function fmt(n) {
+  if(!isFinite(n)||n<0) n=0;
+  if(n<1000) return Math.floor(n).toLocaleString();
+  const sfx=['','thousand','million','billion','trillion','quadrillion','quintillion','sextillion'];
+  const i=Math.min(Math.floor(Math.log10(n)/3), sfx.length-1);
+  return (n/Math.pow(1000,i)).toFixed(2)+' '+sfx[i];
+}
+function fmtS(n) {
+  if(!isFinite(n)||n<0) n=0;
+  if(n<1000) return Math.floor(n)+'';
+  const sfx=['','K','M','B','T','Qa','Qi'];
+  const i=Math.min(Math.floor(Math.log10(n)/3), sfx.length-1);
+  return (n/Math.pow(1000,i)).toFixed(1)+sfx[i];
+}
+function bldgCost(b) {
+  return Math.ceil(b.baseCost * Math.pow(1.15,bldgOwned[b.id]) * (1-pCheapBonus));
+}
+function calcCps() {
+  let t=0;
+  BUILDINGS.forEach(b=>{t+=b.baseCps*bldgOwned[b.id]*bldgMult[b.id];});
+  return t*globalMult*(1+pCpsBonus);
+}
+function bCps(b) {
+  return b.baseCps*bldgOwned[b.id]*bldgMult[b.id]*globalMult*(1+pCpsBonus);
+}
+function calcClick() {
+  return Math.max(1, Math.ceil((1+calcCps()*0.01)*clickMult*(1+pClickBonus)));
+}
+function getMilk() {
+  for(let i=MILK_LEVELS.length-1;i>=0;i--){
+    if(totalBaked>=MILK_LEVELS[i].thresh) return MILK_LEVELS[i];
+  }
+  return MILK_LEVELS[0];
+}
+function starsEarned() { return Math.floor(Math.sqrt(Math.max(0,totalBaked)/1e12)); }
+function canPrestige()  { return starsEarned()>0; }
+
+// ════════ BUY ════════
+function buyBuilding(id) {
+  const b=BUILDINGS.find(x=>x.id===id);
+  const cost=bldgCost(b);
+  if(cookies<cost) return;
+  cookies-=cost; bldgOwned[id]++;
+  rebuildOrbits(); render();
+}
+function buyUpgrade(id) {
+  const u=UPGRADES.find(x=>x.id===id);
+  if(!u||cookies<u.cost||upgBought.has(id)) return;
+  cookies-=u.cost; upgBought.add(id);
+  if(u.type==='click')  clickMult*=u.mult;
+  if(u.type==='bldg')   bldgMult[u.bldg]*=u.mult;
+  if(u.type==='global') globalMult*=u.mult;
+  render();
+}
+function buyPrestigeUpg(id) {
+  const p=PRESTIGE_UPGRADES.find(x=>x.id===id);
+  if(!p||pUpgBought.has(id)) return;
+  if(!p.req.every(r=>pUpgBought.has(r))) return;
+  if(heavenlyChips<p.cost) return;
+  heavenlyChips-=p.cost; pUpgBought.add(id);
+  applyPUpg(p); renderPModal();
+}
+function applyPUpg(p) {
+  if(p.effect==='cps')   pCpsBonus+=p.val;
+  if(p.effect==='click') pClickBonus+=p.val;
+  if(p.effect==='cheap') pCheapBonus+=p.val;
+  if(p.effect==='golden') pGoldenMult*=p.val;
+}
+function reapplyAll() {
+  pCpsBonus=0; pClickBonus=0; pCheapBonus=0; pGoldenMult=1;
+  pUpgBought.forEach(id=>{
+    const p=PRESTIGE_UPGRADES.find(x=>x.id===id);
+    if(p) applyPUpg(p);
+  });
+}
+
+// ════════ CLICK ════════
+function clickCookie(e) {
+  const cp=calcClick();
+  cookies+=cp; totalBaked+=cp;
+  spawnPop(e,'+'+fmtS(cp));
+  checkMilestones(cp);
+  updateDisplay();
+}
+function spawnPop(e,txt) {
+  const el=document.createElement('div');
+  el.className='pop'; el.textContent=txt;
+  const r=document.getElementById('cookieArea').getBoundingClientRect();
+  el.style.left=(e.clientX-r.left+(Math.random()-0.5)*60)+'px';
+  el.style.top=(e.clientY-r.top-10)+'px';
+  document.getElementById('cookieArea').appendChild(el);
+  setTimeout(()=>el.remove(),850);
+}
+
+// ════════ GOLDEN ════════
+function spawnGolden() {
+  if(goldenActive) return;
+  goldenActive=true;
+  const el=document.createElement('div');
+  el.className='gc'; el.textContent='🍪';
+  el.style.left=(10+Math.random()*78)+'vw';
+  el.style.top=(12+Math.random()*65)+'vh';
+  el.onclick=()=>{
+    const bonus=Math.max(calcCps()*13, calcClick()*100)*pGoldenMult;
+    cookies+=bonus; totalBaked+=bonus;
+    toast('✨ Golden Cookie! +'+fmt(bonus)+' cookies!');
+    el.remove(); goldenActive=false; updateDisplay();
+  };
+  document.body.appendChild(el);
+  setTimeout(()=>{if(el.parentNode){el.remove();goldenActive=false;}}, 13000);
+}
+function scheduleGolden() {
+  setTimeout(()=>{spawnGolden(); scheduleGolden();}, 90000+Math.random()*180000);
+}
+
+// ════════ PRESTIGE ════════
+function openPrestige()  { renderPModal(); document.getElementById('prestigeModal').classList.add('open'); }
+function closePrestige() { document.getElementById('prestigeModal').classList.remove('open'); }
+
+function renderPModal() {
+  const earn=starsEarned();
+  document.getElementById('chipCount').textContent=heavenlyChips;
+  document.getElementById('chipEarn').textContent=earn;
+  document.getElementById('pDoBtn').disabled=!canPrestige();
+  document.getElementById('pInfo').textContent = canPrestige()
+    ? `You have ${heavenlyChips} Heavenly Chip${heavenlyChips!==1?'s':''}. Prestiging now earns ${earn} more.`
+    : `Bake 1 trillion cookies total to earn your first Heavenly Chip. (${fmt(totalBaked)} / ${fmt(1e12)})`;
+
+  // Build tier-grouped tree
+  const tiers = {};
+  PRESTIGE_UPGRADES.forEach(p=>{
+    const tier = p.req.length===0 ? 0 : Math.max(...p.req.map(r=>{
+      const pr=PRESTIGE_UPGRADES.find(x=>x.id===r); return pr?pr.req.length===0?1:2:1;
+    }));
+    // simpler: use index-based tiers
+    if(!tiers[p.id]) {
+      // calculate tier depth
+    }
+  });
+  // Group by tier depth via BFS
+  const depth={};
+  PRESTIGE_UPGRADES.forEach(p=>{ if(p.req.length===0) depth[p.id]=0; });
+  let changed=true;
+  while(changed){
+    changed=false;
+    PRESTIGE_UPGRADES.forEach(p=>{
+      if(depth[p.id]===undefined && p.req.every(r=>depth[r]!==undefined)){
+        depth[p.id]=Math.max(...p.req.map(r=>depth[r]))+1;
+        changed=true;
+      }
+    });
+  }
+  const byTier={};
+  PRESTIGE_UPGRADES.forEach(p=>{ const d=depth[p.id]||0; if(!byTier[d])byTier[d]=[]; byTier[d].push(p); });
+
+  const tree=document.getElementById('prestigeTree');
+  tree.innerHTML='';
+  const tierLabels=['Starter','Tier 1','Tier 2','Tier 3','Mastery'];
+  Object.keys(byTier).sort((a,b)=>+a-+b).forEach(tier=>{
+    const div=document.createElement('div'); div.className='ptier';
+    div.innerHTML=`<div class="ptier-label">${tierLabels[+tier]||'Tier '+tier}</div><div class="ptier-row" id="tier${tier}"></div>`;
+    tree.appendChild(div);
+    const row=div.querySelector('.ptier-row');
+    byTier[tier].forEach(p=>{
+      const owned=pUpgBought.has(p.id);
+      const reqsMet=p.req.every(r=>pUpgBought.has(r));
+      const canAfford=heavenlyChips>=p.cost;
+      const node=document.createElement('div');
+      node.className='pnode'+(owned?' owned':'')+((!reqsMet)?' locked':'')+((!owned&&reqsMet&&!canAfford)?' cant-afford':'');
+      node.innerHTML=`
+        <div class="pnode-icon">${p.icon}</div>
+        <div class="pnode-name">${p.name}</div>
+        <div class="pnode-desc">${p.desc}</div>
+        <div class="pnode-cost">⭐ ${p.cost}</div>
+        ${!reqsMet?`<div class="pnode-req">Needs: ${p.req.map(r=>PRESTIGE_UPGRADES.find(x=>x.id===r).name).join(', ')}</div>`:''}
+      `;
+      if(!owned&&reqsMet) node.onclick=()=>buyPrestigeUpg(p.id);
+      row.appendChild(node);
+    });
+  });
+}
+
+function doPrestige() {
+  if(!canPrestige()) return;
+  const earn=starsEarned();
+  heavenlyChips+=earn;
+  cookies=0; totalBaked=0;
+  BUILDINGS.forEach(b=>{bldgOwned[b.id]=0; bldgMult[b.id]=1;});
+  upgBought.clear(); clickMult=1; globalMult=1;
+  reapplyAll(); rebuildOrbits();
+  toast(`⭐ Prestiged! +${earn} Heavenly Chip${earn>1?'s':''}!`, true);
+  renderPModal(); render();
+}
+
+// ════════ MILESTONES ════════
+const MILESTONES=[100,1000,1e4,1e5,1e6,1e7,1e8,1e9,1e10,1e12,1e15];
+const shownM=new Set();
+function checkMilestones(cp) {
+  MILESTONES.forEach(m=>{
+    if(totalBaked>=m && totalBaked-cp<m && !shownM.has(m)){
+      shownM.add(m); toast('🍪 '+fmt(m)+' cookies baked!');
+    }
+  });
+}
+function toast(txt, prestige=false) {
+  const el=document.createElement('div');
+  el.className='toast'+(prestige?' p':''); el.textContent=txt;
+  document.body.appendChild(el);
+  setTimeout(()=>el.remove(), 2800);
+}
+
+// ════════ MILK ════════
+function updateMilk() {
+  const m=getMilk();
+  const container=document.getElementById('milkContainer');
+  const surface=document.getElementById('milkSurface');
+  const wavePath=document.getElementById('wavePath');
+  const lbl=document.getElementById('milkLabel');
+  if(!m.color) { container.style.opacity='0'; lbl.textContent=''; return; }
+  container.style.opacity='1';
+  surface.style.background=m.color;
+  surface.style.color=m.color;
+  wavePath.style.fill=m.color;
+  lbl.textContent=m.icon+' '+m.name+' Milk';
+}
+
+// ════════ ORBIT CURSORS ════════
+const orbitData=[];
+function rebuildOrbits() {
+  const layer=document.getElementById('orbitLayer');
+  layer.innerHTML=''; orbitData.length=0;
+  const count=Math.min(bldgOwned['cursor']||0, 20);
+  const rings=[{r:95,max:6},{r:135,max:8},{r:175,max:6}];
+  let placed=0;
+  for(let ri=0;ri<rings.length&&placed<count;ri++){
+    const ring=rings[ri];
+    const inRing=Math.min(count-placed, ring.max);
+    for(let i=0;i<inRing;i++){
+      const el=document.createElement('div');
+      el.style.cssText='position:absolute;font-size:0.95rem;pointer-events:none;';
+      el.textContent='🖱️';
+      layer.appendChild(el);
+      const speed=7+ri*3+(Math.random()-0.5)*2;
+      const offset=(i/inRing)*Math.PI*2;
+      orbitData.push({el, r:ring.r, speed, offset, startT:performance.now()});
+      placed++;
+    }
+  }
+}
+function animateOrbits(now) {
+  if(!orbitData.length) return;
+  const panel=document.getElementById('centerPanel');
+  const cookie=document.getElementById('cookieBtn');
+  if(!panel||!cookie) return;
+  const pr=panel.getBoundingClientRect();
+  const cr=cookie.getBoundingClientRect();
+  const cx=cr.left+cr.width/2-pr.left;
+  const cy=cr.top+cr.height/2-pr.top;
+  orbitData.forEach(c=>{
+    const t=(now-c.startT)/1000;
+    const a=c.offset+t*(Math.PI*2/c.speed);
+    const x=cx+Math.cos(a)*c.r-9;
+    const y=cy+Math.sin(a)*c.r-9;
+    c.el.style.left=x+'px';
+    c.el.style.top=y+'px';
+    c.el.style.transform=`rotate(${a*180/Math.PI+90}deg)`;
+  });
+}
+
+// ════════ RENDER ════════
+function updateDisplay() {
+  cps=calcCps();
+  document.getElementById('cookieVal').textContent=fmt(cookies);
+  document.getElementById('cpsVal').textContent=fmt(cps)+'/s';
+  document.getElementById('totalVal').textContent=fmt(totalBaked);
+  document.getElementById('multiBadge').textContent='+'+fmt(calcClick())+' per click';
+  updateMilk();
+}
+
+let renderCooldown=0;
+function render() {
+  // UPGRADES
+  const ul=document.getElementById('upgradesList');
+  ul.innerHTML='';
+  UPGRADES.forEach(u=>{
+    const owned=upgBought.has(u.id);
+    const canBuy=cookies>=u.cost&&!owned;
+    const btn=document.createElement('button');
+    btn.className='upgrade-btn'+(owned?' bought':'');
+    btn.disabled=!canBuy&&!owned;
+
+    let impact='';
+    if(!owned){
+      if(u.type==='click'){
+        const delta=calcClick()*(u.mult-1);
+        impact=delta>0?'+'+fmtS(delta)+' click':'';
+      } else if(u.type==='bldg'){
+        const b2=BUILDINGS.find(x=>x.id===u.bldg);
+        const extra=bCps(b2)*(u.mult-1);
+        impact=extra>0?'+'+fmtS(extra)+'/s':'New: '+fmtS(b2.baseCps*bldgMult[b2.id]*globalMult*(1+pCpsBonus))+'/s ea';
+      } else if(u.type==='global'){
+        const extra=calcCps()*(u.mult-1);
+        impact=extra>0?'+'+fmtS(extra)+'/s':'';
+      }
+    }
+
+    btn.innerHTML=`
+      <span class="upg-icon">${u.icon}</span>
+      <span class="upg-info">
+        <div class="upg-name">${u.name}</div>
+        <div class="upg-desc">${u.desc}</div>
+        ${impact?`<div class="upg-impact">${owned?'✓ owned':impact}</div>`:''}
+      </span>
+      <span class="upg-cost">${owned?'✓':'🍪 '+fmt(u.cost)}</span>`;
+    if(!owned) btn.onclick=()=>buyUpgrade(u.id);
+    ul.appendChild(btn);
+  });
+
+  // BUILDINGS
+  const bl=document.getElementById('buildingsList');
+  bl.innerHTML='';
+  BUILDINGS.forEach(b=>{
+    const cost=bldgCost(b);
+    const can=cookies>=cost;
+    const totalCps=bCps(b);
+    const perUnit=bldgOwned[b.id]>0
+      ? totalCps/bldgOwned[b.id]
+      : b.baseCps*bldgMult[b.id]*globalMult*(1+pCpsBonus);
+    const progress=(bldgOwned[b.id]%10)/10*100;
+    const btn=document.createElement('button');
+    btn.className='bldg-btn'; btn.disabled=!can;
+    btn.innerHTML=`
+      <span class="bldg-icon">${b.icon}</span>
+      <span class="bldg-info">
+        <div class="bldg-name">${b.name}</div>
+        <div class="bldg-cps-line">${bldgOwned[b.id]>0
+          ? fmt(totalCps)+'/s total · '+fmt(perUnit)+'/s each'
+          : b.desc+' · '+fmt(perUnit)+'/s each'}</div>
+        <div class="bldg-meta">
+          <span class="bldg-cost">🍪 ${fmt(cost)}</span>
+          <span class="bldg-count">${bldgOwned[b.id]}</span>
+        </div>
+        <div class="bldg-bar"><div class="bldg-bar-fill" style="width:${progress}%"></div></div>
+      </span>`;
+    btn.onclick=()=>buyBuilding(b.id);
+    bl.appendChild(btn);
+  });
+
+  updateDisplay();
+}
+
+// ════════ GAME LOOP ════════
+function loop(now) {
+  const wall=Date.now();
+  const dt=Math.min((wall-lastTick)/1000, 0.5);
+  lastTick=wall;
+  const gain=calcCps()*dt;
+  cookies+=gain; totalBaked+=gain;
+  checkMilestones(gain);
+  animateOrbits(now);
+  updateDisplay();
+  renderCooldown+=dt;
+  if(renderCooldown>=1){ renderCooldown=0; render(); }
+  requestAnimationFrame(loop);
+}
+
+// ════════ INIT ════════
+render();
+scheduleGolden();
+lastTick=Date.now();
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
